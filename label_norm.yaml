@@ -1,0 +1,41 @@
+# locations of label files - these are lists of labels, one per line
+label_files:
+  semeval2020: propaganda_detection/tools/data/propaganda-techniques-names-semeval2020task11.txt
+  semeval2021: SEMEVAL-2021-task6-corpus/techniques_list_task1-2.txt
+  semeval2021_3: SEMEVAL-2021-task6-corpus/techniques_list_task3.txt
+
+# Extra in semeval2021_3 are:
+#   - Transfer
+#   - Appeal to (Strong) Emotions
+
+# Translates SEMEVAL 2020 task 11 terms to SEMEVAL 2021 task 6 terms
+translate:
+  Loaded_Language: Loaded Language
+  Appeal_to_fear-prejudice: Appeal to fear/prejudice
+  Appeal_to_Authority: Appeal to authority
+  Causal_Oversimplification: Causal Oversimplification
+  Thought-terminating_Cliches: Thought-terminating cliché
+  Flag-Waving: Flag-waving
+  Name_Calling,Labeling: Name calling/Labeling
+  Doubt: Doubt
+  Slogans: Slogans
+  Repetition: Repetition
+  Exaggeration,Minimisation: Exaggeration/Minimisation
+  Black-and-White_Fallacy: Black-and-white Fallacy/Dictatorship
+
+
+# 2020 values split into multiple 2021 values
+# What used to be a single label now turns into a set of distinct labels
+label_to_group:
+  Bandwagon,Reductio_ad_hitlerum:
+    - Bandwagon
+    - Reductio ad hitlerum
+  Whataboutism,Straw_Men,Red_Herring:
+    - Presenting Irrelevant Data (Red Herring)
+    - Misrepresentation of Someone's Position (Straw Man)
+    - Whataboutism
+
+
+
+
+

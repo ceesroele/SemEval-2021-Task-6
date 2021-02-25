@@ -1,0 +1,850 @@
+#--------- Development configuration ---------
+
+# ------
+pipeline:
+  # set the pipeline definition to be used currently
+  cur_scenario: basic_only
+  scenario:
+    basic_only:
+      #- predict2021_2
+      #- predict2021_seq_task1
+      - quality2021_2
+    task1:
+      #- pretrain_2021_1
+      - basic2020
+      - quality
+    task2:
+      - basic2020_2
+      - quality2021_2
+    task2_ed:
+      - basic2020_2_ed
+      - quality2021_2_ed
+    task3:
+      - pretrain_2021_3
+      - basic2021_3
+      - quality2021_3
+  default:
+    output_dir: ../outputs
+    general:
+      nothing: now
+    data:
+      nothing: now
+    train:
+      model:
+        name: None
+        model_type: None
+        model_path: None
+      converter: fragment
+      target: classification
+      skip_test: False
+    evaluation:
+      nothing: now
+    postprocess:
+      disable: True
+
+  ############################ Task 1 ##############################################
+
+  # Combine datasets from 2020 and 2021
+  combi:
+    data:
+      dataloader: loadTAB2020
+      file: propaganda_detection/datasets/train-task2-TC.labels
+      filters:
+        - sentence_splitter
+        - eliminate_short
+        - translate_2020_2021_1_2
+      labels: semeval2021
+
+    train:
+      model:
+        model_type: roberta
+        name: roberta-base
+        args:
+          num_train_epochs: 30
+          train_batch_size: 8
+      # skip_test: True
+      converter: multilabel
+      target: multi-label classification
+
+    eval:
+      disable: False
+      model:
+        model_type: roberta
+        model_path: ../outputs/outputs_combi
+
+    postprocess:
+      disable: False
+      target: multi-label classification
+      processor:
+        class: CreatePrediction
+        model:
+          model_type: roberta
+          model_path: ../outputs/outputs_combi
+        devfile: SEMEVAL-2021-task6-corpus/data/dev_set_task1.txt
+        outfile: task1_prediction_file.txt
+
+  # Train separately for datasets for 2020 and 2021
+  pretrain_2021_1:
+    data:
+      dataloader: task6_2021_1_2
+      filters:
+        - sentence_splitter
+      labels: semeval2021
+
+    train:
+      model:
+        model_type: roberta
+        name: roberta-base
+        args:
+          num_train_epochs: 4
+          train_batch_size: 8
+          save_model_every_epoch: False
+          save_eval_checkpoints: False
+          learning_rate: 8e-6
+      converter: multilabel
+      target: multi-label classification
+    eval:
+      disable: False
+
+    postprocess:
+      disable: True
+
+  basic2020:
+    data:
+      dataloader: loadTAB2020
+      file: propaganda_detection/datasets/train-task2-TC.labels
+      filters:
+        - sentence_splitter
+        - eliminate_short
+        - translate_2020_2021_1_2
+      labels: semeval2021
+
+    train:
+      model:
+        model_type: roberta
+        model_path: ../outputs/outputs_pretrain_2021_1
+        args:
+          num_train_epochs: 30
+          train_batch_size: 8
+          learning_rate: 8e-6
+      converter: multilabel
+      skip_test: True
+      target: multi-label classification
+
+    eval:
+      disable: False
+
+  quality:
+    data:
+      dataloader: loadJSON2021
+      file: SEMEVAL-2021-task6-corpus/data/training_set_task2.txt
+      labels: semeval2021
+
+    train:
+      model:
+        model_type: roberta
+        model_path: ../outputs/outputs_basic2020
+        args:
+          num_train_epochs: 20
+          train_batch_size: 4
+          save_model_every_epoch: False
+          save_eval_checkpoints: False
+          learning_rate: 8e-6
+      skip_test: False
+      converter: multilabel
+      target: multi-label classification
+
+    eval:
+      disable: False
+
+    postprocess:
+      disable: False
+      target: multi-label classification
+      processor:
+        class: CreatePrediction
+        model:
+          model_type: roberta
+          model_path: ../outputs/outputs_quality
+        devfile: SEMEVAL-2021-task6-corpus/data/dev_set_task1.txt
+        outfile: task1_prediction_file.txt
+
+  predict2021_1:
+    data:
+      dataloader: task6_2021_1_2
+      filters:
+        - sentence_splitter
+      labels: semeval2021
+
+    train:
+      disable: True
+      model:
+        model_type: roberta
+        model_path: ../outputs/outputs_basic2020
+        args:
+          num_train_epochs: 40
+          train_batch_size: 8
+          save_model_every_epoch: False
+          save_eval_checkpoints: False
+          learning_rate: 8e-6
+      skip_test: False
+      converter: multilabel
+      target: multi-label classification
+
+    eval:
+      disable: True
+
+    postprocess:
+      disable: False
+      target: multi-label classification
+      processor:
+        class: CreatePrediction
+        model:
+          model_type: bert
+          model_path: ../outputs/outputs_quality
+        devfile: SEMEVAL-2021-task6-corpus/data/dev_set_task1.txt
+        outfile: task1_prediction_file.txt
+
+  submission_1:
+    data:
+      dataloader: task6_1_2_train_dev
+      labels: semeval2021
+
+    train:
+      model:
+        model_type: roberta
+        model_path: ../outputs/outputs_basic2020
+        args:
+          num_train_epochs: 20
+          train_batch_size: 4
+          save_model_every_epoch: False
+          save_eval_checkpoints: False
+          learning_rate: 8e-6
+      skip_test: True
+      converter: multilabel
+      target: multi-label classification
+
+    eval:
+      disable: False
+
+    postprocess:
+      disable: False
+      target: multi-label classification
+      processor:
+        class: CreatePrediction
+        model:
+          model_type: roberta
+          model_path: ../outputs/outputs_quality
+        devfile: SEMEVAL-2021-task6-corpus/data/test_set_task1.txt
+        outfile: task1_test_file.txt
+
+
+############################ Task 2 ##############################################
+
+
+###  BART version ###
+
+# First training on basis of 2020 data
+  basic2020_2:
+    data:
+      dataloader: loadTAB2020
+      file: propaganda_detection/datasets/train-task2-TC.labels
+      filters:
+        - sentence_splitter
+        - eliminate_short
+        - translate_2020_2021_1_2
+      labels: semeval2021
+
+    train:
+      model:
+        model_type: bart
+        name: facebook/bart-base
+        args:
+          num_train_epochs: 30
+          evaluate_generated_text: True
+          train_batch_size: 8
+          eval_batch_size: 8
+          use_multiprocessing: False
+      converter: span2
+      target: span2 identification
+
+    eval:
+      disable: False
+
+
+  # Second training on basis of best model with 2021 data
+  quality2021_2:
+    data:
+      dataloader: loadJSON2021
+      file: SEMEVAL-2021-task6-corpus/data/training_set_task2.txt
+      labels: semeval2021
+
+    train:
+      model:
+        model_type: bart
+        name: ../outputs/outputs_basic2020_2
+        args:
+          num_train_epochs: 25
+          evaluate_generated_text: True
+          train_batch_size: 8
+          eval_batch_size: 8
+          use_multiprocessing: False
+          #weight_decay: 0.01  # dropout: 0.3  # Best value 0.3
+          #learning_rate: 8e-5
+      converter: span2
+      target: span2 identification
+
+    eval:
+      disable: False
+
+    postprocess:
+      disable: False
+      target: span identification
+      processor:
+        class: CreateSpanPrediction
+        model:
+          model_type: bart
+          model_path: ../outputs/outputs_quality2021_2
+          args:
+            max_length: 200
+            length_penalty: 0.4  # Found best value to be 0.4
+            repetition_penalty: 2.0   # Found best value to be 2.0
+            num_beams: 3
+            num_return_sequences: 1
+            top_p: 0.8
+            top_k: 0
+            do_sample: True
+        devfile: SEMEVAL-2021-task6-corpus/data/dev_set_task2.txt
+        outfile: task2_prediction_file.txt
+
+
+  # Second training on basis of best model with 2021 data
+  predict2021_2:
+    data:
+      dataloader: loadJSON2021
+      file: SEMEVAL-2021-task6-corpus/data/training_set_task2.txt
+      #filters:
+      #  - sentence_splitter
+      #  - duplicate_fragments
+      labels: semeval2021
+
+    train:
+      disable: True
+      model:
+        model_type: bart
+        name: ../outputs/outputs_basic2020_2
+        args:
+          num_train_epochs: 1
+          evaluate_generated_text: True
+          train_batch_size: 8
+          eval_batch_size: 8
+          use_multiprocessing: False
+      converter: span2
+      target: span2 identification
+
+    eval:
+      disable: True
+
+    postprocess:
+      disable: False
+      target: span identification
+      processor:
+        class: CreateSpanPrediction
+        model:
+          model_type: bart
+          model_path: ../outputs/outputs_quality2021_2
+          args:
+            max_length: 200
+            length_penalty: 0.4  # Found best value to be 0.4
+            repetition_penalty: 2.0   # default is 1.0, with 2.0 got F1=0.46
+            num_beams: 3
+            num_return_sequences: 1  # found 2 to be a good value (but they are always the same??)
+            top_p: 0.8  # found best value to be 0.8
+            top_k: 0
+            do_sample: True
+        #devfile: SEMEVAL-2021-task6-corpus/data/dev_set_task2.txt
+        devfile: SEMEVAL-2021-task6-corpus/data/dev_set_task2.txt
+        outfile: task2_prediction_file.txt
+
+  # Second training on basis of best model with 2021 data
+  predict2021_seq_task1:
+    data:
+      dataloader: loadJSON2021
+      file: SEMEVAL-2021-task6-corpus/data/training_set_task2.txt
+      #filters:
+      #  - sentence_splitter
+      #  - duplicate_fragments
+      labels: semeval2021
+
+    train:
+      disable: True
+      model:
+        model_type: bart
+        #name: facebook/bart-base
+        name: ../outputs/outputs_basic2020_2
+        args:
+          num_train_epochs: 1
+          evaluate_generated_text: True
+          train_batch_size: 8
+          eval_batch_size: 8
+          use_multiprocessing: False
+          skip_special_tokens: False
+      converter: span2
+      target: span2 identification
+
+    eval:
+      disable: True
+
+    postprocess:
+      disable: False
+      target: span identification
+      processor:
+        class: CreateSpanPrediction
+        model:
+          model_type: bart
+          model_path: ../outputs/outputs_quality2021_2
+          args:
+            max_length: 200
+            length_penalty: 0.4  # Found best value to be 0.4
+            num_beams: 3
+            num_return_sequences: 2
+            top_p: 0.80
+            top_k: 0
+            do_sample: True
+        #devfile: SEMEVAL-2021-task6-corpus/data/dev_set_task1.txt
+        devfile: SEMEVAL-2021-task6-corpus/data/test_set_task1.txt
+        #devfile: SEMEVAL-2021-task6-corpus/data/test_set_task2.txt
+        outfile: task1_prediction_file.txt
+
+
+############################################################################
+# RoBERTa / BERT EncoderDecoder version
+# First training on basis of 2020 data
+  basic2020_2_ed:
+    data:
+      dataloader: loadTAB2020
+      file: propaganda_detection/datasets/train-task2-TC.labels
+      filters:
+        - sentence_splitter
+        - eliminate_short
+        - translate_2020_2021_1_2
+      labels: semeval2021
+
+    train:
+      model:
+        model_type: roberta
+        name: roberta-base
+        args:
+          num_train_epochs: 30
+          evaluate_generated_text: True
+          train_batch_size: 4
+          eval_batch_size: 4
+          use_multiprocessing: False
+          max_length: 200
+          length_penalty: 0.4  # Found best value to be 0.4
+          num_beams: 3
+          num_return_sequences: 2
+          top_p: 0.80
+          top_k: 0
+          do_sample: True
+      converter: span2
+      target: span2 identification
+
+    eval:
+      disable: False
+
+
+  # Second training on basis of best model with 2021 data
+  quality2021_2_ed:
+    data:
+      dataloader: loadJSON2021
+      file: SEMEVAL-2021-task6-corpus/data/training_set_task2.txt
+      #filters:
+      #  - sentence_splitter
+      labels: semeval2021
+
+    train:
+      model:
+        model_type: roberta
+        #name: facebook/bart-base
+        name: ../outputs/outputs_basic2020_2_ed
+        args:
+          num_train_epochs: 25
+          evaluate_generated_text: True
+          early_stopping: True
+          train_batch_size: 4
+          eval_batch_size: 4
+          use_multiprocessing: False
+          dropout: 0.3
+          max_length: 200
+          length_penalty: 0.4  # Found best value to be 0.4
+          num_beams: 3
+          num_return_sequences: 2
+          top_p: 0.80
+          top_k: 0
+          do_sample: True
+      converter: span2
+      target: span2 identification
+
+    eval:
+      disable: False
+
+    postprocess:
+      disable: False
+      target: span identification
+      processor:
+        class: CreateSpanPrediction
+        model:
+          model_type: roberta
+          model_path: ../outputs/outputs_quality2021_2_ed
+          args:
+            max_length: 200
+            length_penalty: 0.4  # Found best value to be 0.4
+            num_beams: 3
+            num_return_sequences: 2
+            top_p: 0.80
+            top_k: 0
+            do_sample: True
+        devfile: SEMEVAL-2021-task6-corpus/data/dev_set_task2.txt
+        outfile: task2_prediction_file.txt
+
+
+  # Second training on basis of best model with 2021 data
+  predict2021_2_ed:
+    data:
+      dataloader: loadJSON2021
+      file: SEMEVAL-2021-task6-corpus/data/training_set_task2.txt
+      #filters:
+      #  - sentence_splitter
+      #  - duplicate_fragments
+      labels: semeval2021
+
+    train:
+      disable: True
+      model:
+        model_type: roberta
+        name: ../outputs/outputs_basic2020_2_ed
+        args:
+          num_train_epochs: 1
+          evaluate_generated_text: True
+          train_batch_size: 4
+          eval_batch_size: 4
+          use_multiprocessing: False
+          max_length: 200
+          length_penalty: 0.4  # Found best value to be 0.4
+          num_beams: 3
+          num_return_sequences: 2
+          top_p: 0.80
+          top_k: 0
+          do_sample: True
+      converter: span2
+      target: span2 identification
+
+    eval:
+      disable: True
+
+    postprocess:
+      disable: False
+      target: span identification
+      processor:
+        class: CreateSpanPrediction
+        model:
+          model_type: roberta
+          model_path: ../outputs/outputs_quality2021_2_ed
+          args:
+            max_length: 200
+            length_penalty: 0.4  # Found best value to be 0.4
+            num_beams: 5
+            num_return_sequences: 2
+            top_p: 0.80
+            top_k: 0
+            do_sample: True
+        devfile: SEMEVAL-2021-task6-corpus/data/dev_set_task2.txt
+        #devfile: SEMEVAL-2021-task6-corpus/data/test_set_task2.txt
+        outfile: task2_prediction_file.txt
+
+  # Second training on basis of best model with 2021 data
+  predict2021_seq_task1_ed:
+    data:
+      dataloader: loadJSON2021
+      file: SEMEVAL-2021-task6-corpus/data/training_set_task2.txt
+      #filters:
+      #  - sentence_splitter
+      #  - duplicate_fragments
+      labels: semeval2021
+
+    train:
+      disable: True
+      model:
+        model_type: roberta
+        name: ../outputs/outputs_basic2020_2_ed
+        args:
+          num_train_epochs: 1
+          evaluate_generated_text: True
+          train_batch_size: 8
+          eval_batch_size: 8
+          use_multiprocessing: False
+          skip_special_tokens: False
+      converter: span2
+      target: span2 identification
+
+    eval:
+      disable: True
+
+    postprocess:
+      disable: False
+      target: span identification
+      processor:
+        class: CreateSpanPrediction
+        model:
+          model_type: roberta
+          model_path: ../outputs/outputs_quality2021_2_ed
+          args:
+            max_length: 200
+            length_penalty: 0.4  # Found best value to be 0.4
+            num_beams: 3
+            num_return_sequences: 2
+            top_p: 0.80
+            top_k: 0
+            do_sample: True
+        devfile: SEMEVAL-2021-task6-corpus/data/dev_set_task1.txt
+        #devfile: SEMEVAL-2021-task6-corpus/data/test_set_task2.txt
+        outfile: task1_prediction_file.txt
+
+
+############################ Task 3 ##############################################
+
+  pretrain_2021_3:
+    data:
+      dataloader: task6_2021_3
+      filters:
+        - sentence_splitter
+      labels: semeval2021_3
+
+    train:
+      model:
+        model_type: roberta
+        name: roberta-base
+        args:
+          num_train_epochs: 4
+          train_batch_size: 8
+          save_model_every_epoch: False
+          save_eval_checkpoints: False
+          learning_rate: 8e-6
+      converter: multilabel
+      target: multi-label classification
+    eval:
+      disable: False
+
+    postprocess:
+      disable: True
+
+
+  # First training on 2020 data
+  basic2020_3_orig:
+    data:
+      dataloader: redux
+      filters:
+        - duplicate_fragments
+      labels: semeval2021_3
+
+    train:
+      model:
+        model_type: roberta
+        name: roberta-base
+        args:
+          num_train_epochs: 30
+          train_batch_size: 16
+      converter: multilabel
+      target: multi-label classification
+
+    eval:
+      disable: True
+
+  basic2021_3:
+    data:
+      dataloader: redux
+      filters:
+        - sentence_splitter
+        - eliminate_short
+      labels: semeval2021_3
+
+    train:
+      model:
+        model_type: roberta
+        model_path: ../outputs/outputs_pretrain_2021_3
+        args:
+          num_train_epochs: 35
+          train_batch_size: 4
+          learning_rate: 8e-6
+      converter: multilabel
+      skip_test: True
+      target: multi-label classification
+
+    eval:
+      disable: False
+
+
+  # Second training on basis of best model with 2021 data
+  quality2021_3_orig:
+    data:
+      dataloader: task6_2021_3
+      labels: semeval2021_3
+
+    train:
+      model:
+        model_type: roberta
+        model_path: ../outputs/outputs_basic2020_3
+        args:
+          num_train_epochs: 30
+      converter: multilabel
+      target: multi-label classification
+
+    eval:
+      disable: False
+
+    postprocess:
+      disable: False
+      target: multi-label classification
+      processor:
+        class: CreatePrediction
+        model:
+          model_type: roberta
+          model_path: ../outputs/outputs_quality2021_3
+        devfile: SEMEVAL-2021-task6-corpus/data/dev_set_task3/dev_set_task3.txt
+        outfile: task3_prediction_file.txt
+
+
+  quality2021_3:
+    data:
+      dataloader: task6_2021_3
+      labels: semeval2021_3
+
+    train:
+      model:
+        model_type: roberta
+        model_path: ../outputs/outputs_basic2020_3
+        args:
+          num_train_epochs: 30
+          train_batch_size: 4
+          save_model_every_epoch: False
+          save_eval_checkpoints: False
+          learning_rate: 8e-6
+      skip_test: False
+      converter: multilabel
+      target: multi-label classification
+
+    eval:
+      disable: False
+
+    postprocess:
+      disable: False
+      target: multi-label classification
+      processor:
+        class: CreatePrediction
+        model:
+          model_type: roberta
+          model_path: ../outputs/outputs_quality2021_3
+        devfile: SEMEVAL-2021-task6-corpus/data/dev_set_task3_labeled/dev_set_task3_labeled.txt
+        outfile: task3_prediction_file.txt
+
+  # Second training on basis of best model with 2021 data
+  submission_3:
+    data:
+      dataloader: task6_3_train_dev
+      labels: semeval2021_3
+
+    train:
+      disable: False
+      model:
+        model_type: roberta
+        model_path: ../outputs/outputs_basic2020_3
+        args:
+          num_train_epochs: 30
+          train_batch_size: 4
+          save_model_every_epoch: False
+          save_eval_checkpoints: False
+          learning_rate: 8e-6
+      skip_test: True
+      converter: multilabel
+      target: multi-label classification
+
+    eval:
+      disable: False
+
+    postprocess:
+      disable: False
+      target: multi-label classification
+      processor:
+        class: CreatePrediction
+        model:
+          model_type: roberta
+          model_path: ../outputs/outputs_quality2021_3
+        devfile: SEMEVAL-2021-task6-corpus/data/test_set_task3/test_set_task3.txt
+        outfile: task3_test_file.txt
+
+
+# ----- Data sources -----
+data:
+  overwrite: True
+
+  2020-task11-1:
+    dir: propaganda_detection/datasets/train-task1-SI.labels
+    label_file:
+    articles_dir: train-articles
+    pkl_file: propaganda1.pkl
+
+  2020-task11-2:
+    dir: propaganda_detection/datasets
+    label_file: train-task2-TC.labels
+    articles_dir: train-articles
+    pkl_file: propaganda2.pkl
+    pkl_fragment_file: propaganda2_fragment.pkl
+
+  2021-task6-1:
+    dir: SEMEVAL-2021-task6-corpus/data
+    label_file: training_set_task1.txt
+    pkl_file: propaganda2021_1.pkl
+
+  2021-task6-2:
+    dir: SEMEVAL-2021-task6-corpus/data
+    label_file: training_set_task2.txt
+    pkl_file: propaganda2021_2.pkl
+    pkl_fragment_file: propaganda2021_2_fragment.pkl
+
+  2021-task6-2-dev:
+    dir: SEMEVAL-2021-task6-corpus/data
+    label_file: dev_set_task2.txt
+    pkl_file: propaganda2021_2.pkl
+    pkl_fragment_file: propaganda2021_2_fragment.pkl
+
+  2021-task6-3:
+    # Note that I have already unpacked the training_set_task3.zip file
+    dir: SEMEVAL-2021-task6-corpus/data/training_set_task3
+    label_file: training_set_task3.txt
+    pkl_fragment_file: propaganda2021_3_fragment.pkl
+    pkl_file: propaganda2021_3.pkl
+
+  2021-task6-3-dev:
+    # Note that I have already unpacked the training_set_task3.zip file
+    dir: SEMEVAL-2021-task6-corpus/data/dev_set_task3_labeled
+    label_file: dev_set_task3_labeled.txt
+    pkl_fragment_file: propaganda2021_3_fragment.pkl
+    pkl_file: propaganda2021_3.pkl
+
+model:
+  default:
+    args:
+      num_train_epochs: 1
+      overwrite_output_dir: True
+      evaluate_during_training: True
+      evaluate_during_training_verbose: True
+      use_early_stopping: False
+      early_stopping_consider_epochs: True
+      early_stopping_delta: 0.01
+      early_stopping_patience: 5
+      reprocess_input_data: False
+      save_steps: -1
+      save_model_every_checkpoint: False
+      save_model_every_epoch: False
+      save_eval_checkpoints: False
+      use_multiprocessing: False
