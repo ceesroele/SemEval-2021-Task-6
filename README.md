@@ -1,7 +1,7 @@
 # SemEval-2021-Task-6
 
 ## Introduction
-This is the WVOQ team code for participation in [SemEval 2021 Task 6: "Detection of Persuasion Techniques in Texts and Images"](https://propaganda.math.unipd.it/semeval2021task6/index.htm).
+This is the WVOQ team code for participation in [SemEval 2021 Task 6: "Detection of Persuasion Techniques in Texts and Images"](https://propaganda.math.unipd.it/semeval2021task6/index.html).
 
 WVOQ participated in all three subtasks. Most interesting is the contribution to subtask 2. Simultaneously detecting a span and classifying it was done through a sequence-to-sequence model.
 
