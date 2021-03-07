@@ -3,7 +3,8 @@
 -----
 The code here is the full code used by WVOQ for all three tasks of SemEval-2021 Task 6.
 
-```Most likely you are interested only in the code for task 2:
+```
+Most likely you are interested only in the code for task 2:
 simultaneously detecting a span and classifying it.
 
 That code is now taken out of the code-base, cleaned up, given installation instructions, 
