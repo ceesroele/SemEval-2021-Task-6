@@ -12,7 +12,7 @@ and available at [https://github.com/ceesroele/span_model](https://github.com/ce
 Improvements:
 - Simpler to understand
 - Re-usable for simultaneous span detection and classification tasks
-- And it is more likely to run on your machine too, not just on mine ...
+- And it is more likely to run on your machine too, not just on mine ...```
 
 -----
 
