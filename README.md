@@ -40,8 +40,12 @@ The system is started with: `python pipeline.py` which will select `cur_scenario
 
 ## Future work
 
-The present system was set up for experimentation and the code still contains many traces of experiments done in the past that weren't used in the final submissions to the tasks.
+Deal with the two main causes of systemic errors:
+1. Begin and end tags are not matching
+2. Words or characters are introduced in the generated sentences that were not in the input
 
-As only the contribution to subtask 2 is interesting, I will extract it into a standalone system.
-
+Ideas are:
+* Train with half-masked sentences consisting only of begin and end tags (pre-training for tags)
+* Add functionality to the generator code in Transformers to prevent tokens other than
+tags in the output that are not in the input.
 
