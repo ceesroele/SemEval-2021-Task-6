@@ -1,5 +1,22 @@
 # SemEval-2021-Task-6
 
+-----
+The code here is the full code used by WVOQ for all three tasks of SemEval-2021 Task 6.
+
+```Most likely you are interested only in the code for task 2:
+simultaneously detecting a span and classifying it.
+
+That code is now taken out of the code-base, cleaned up, given installation instructions, 
+and available at [https://github.com/ceesroele/span_model](https://github.com/ceesroele/span_model).
+
+Improvements:
+- Simpler to understand
+- Re-usable for simultaneous span detection and classification tasks
+- And it is more likely to run on your machine too, not just on mine ...
+
+-----
+
+
 ## Introduction
 This is the WVOQ team code for participation in [SemEval 2021 Task 6: "Detection of Persuasion Techniques in Texts and Images"](https://propaganda.math.unipd.it/semeval2021task6/index.html).
 
