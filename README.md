@@ -2,6 +2,11 @@
 
 The code here is the full code used by WVOQ for all three tasks of SemEval-2021 Task 6.
 
+You can find my article [WVOQ at SemEval-2021 Task 6: BART for Span Detection and Classification](https://aclanthology.org/2021.semeval-1.32/) 
+as part of the [Proceedings of the 15th International Workshop on Semantic Evaluation (SemEval-2021)](https://aclanthology.org/volumes/2021.semeval-1/).
+
+The poster presented at the ACL/IJCNLP / SemEval2021 is here at [doc/bart_for_span_detection_poster.pdf](doc/bart_for_span_detection.pdf).
+
 -----
 
 Most likely you are interested only in the code for task 2:
